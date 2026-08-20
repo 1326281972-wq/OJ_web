@@ -1,0 +1,9 @@
+---
+description: 
+alwaysApply: true
+enabled: true
+updatedAt: 2026-08-19T17:17:34.401Z
+provider: 
+---
+
+后端服务开发必须使用nodejs或python，浏览器内编译运行模块为纯前端WASM，不计入后端栈限制
