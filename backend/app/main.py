@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api.v1 import auth, problems, submissions
+from .api.v1 import auth, judge, problems, submissions
 from .core.config import FAKE_JUDGE
 from .core.errors import ApiError, api_error_handler
 from .db import init_db
@@ -20,6 +20,7 @@ app.add_exception_handler(ApiError, api_error_handler)
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(problems.router, prefix="/api/v1", tags=["problems"])
 app.include_router(submissions.router, prefix="/api/v1", tags=["submissions"])
+app.include_router(judge.router, prefix="/api/v1", tags=["judge"])
 
 
 @app.get("/api/v1/health", tags=["meta"])
