@@ -1,0 +1,9 @@
+# 后端依赖清单（python -m venv 后 pip install -r requirements.txt 重装）
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+sqlalchemy==2.0.35
+pydantic==2.9.2
+python-jose[cryptography]==3.3.0
+bcrypt==4.2.1              # 直接使用 bcrypt（passlib 在 Python 3.13 兼容性差，已弃用）
+python-dotenv==1.0.1
+httpx==0.27.2              # 仅冒烟测试（fastapi TestClient）用
