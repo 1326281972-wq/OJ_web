@@ -1,0 +1,12 @@
+body {
+  margin: 0;
+  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  background: #f5f7fa;
+  color: #303133;
+}
+
+.page {
+  max-width: 720px;
+  margin: 80px auto;
+  padding: 0 24px;
+}
