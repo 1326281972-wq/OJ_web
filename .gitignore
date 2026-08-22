@@ -1,0 +1,63 @@
+# ===== Web / Node 依赖 =====
+node_modules/
+# 依赖树体积巨大且可由 package.json + package-lock.json 一条命令重装；提交它会拖慢克隆且易与平台不兼容
+
+frontend/dist/
+# Vite 构建产物，随时可由 `npm run build` 重建，不是源码
+
+# ===== Python 缓存与安装产物 =====
+__pycache__/
+*.py[cod]
+# Python 字节码缓存，解释器自动生成，无保留价值
+
+.venv/
+venv/
+# 虚拟环境内含整棵已安装依赖树，与本机 Python/路径绑定，应由 `python -m venv` + requirements.txt 重装
+
+*.egg-info/
+build/
+dist/
+# Python 打包产物（setuptools/pip 生成），由清单重新构建
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+# 测试/类型检查工具缓存，自动生成
+
+# ===== 敏感信息与本地环境文件 =====
+.env
+*.env.local
+# 本地环境文件可能含 SECRET_KEY/口令等秘密。仓库只保留无秘密的 .env.example，README 已写明复制方法
+
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+# 私钥/证书，绝不能入库
+
+backend/data/
+*.db
+*.sqlite
+*.sqlite3
+# SQLite 数据文件是本地产物，seed 脚本可重建；入库会混入演示脏数据与体积
+
+logs/
+*.log
+# 运行日志含时间戳与本地路径，应由日志系统留存，不入版本库
+
+# ===== 编辑器与操作系统垃圾 =====
+.idea/
+.vscode/
+*.swp
+*~
+# 编辑器个人配置与临时文件，因人而异，不应进公共仓库
+
+.DS_Store
+Thumbs.db
+Desktop.ini
+# 操作系统生成的文件
+
+# ===== 构建与语言服务缓存 =====
+*.tsbuildinfo
+# TypeScript 增量构建缓存（tsc 每次编译自动生成），随时可重建，不入库
