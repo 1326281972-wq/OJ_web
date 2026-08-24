@@ -16,6 +16,6 @@ DATABASE_URL = os.getenv(
     f"sqlite:///{(DATA_DIR / 'app.db').as_posix()}",
 )
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
-FAKE_JUDGE = os.getenv("FAKE_JUDGE", "true").lower() in ("1", "true", "yes")
+FAKE_JUDGE = os.getenv("FAKE_JUDGE", "false").lower() in ("1", "true", "yes")  # 第 6 天起默认关闭：真实评测由 judge/judge_daemon.py 承担
 SUBMIT_INTERVAL_SECONDS = 5   # 同一用户两次提交最小间隔（42901）
 CODE_MAX_BYTES = 64 * 1024    # 代码长度上限

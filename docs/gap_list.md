@@ -12,6 +12,7 @@
 - **需求**：实现 `judge_daemon.py`：judger1 登录 → 轮询 `POST /judge/tasks` 拉任务 → checkout → 取 source/problem/testdata → 本地真实编译（g++）并运行全部测试数据 → `POST /judge/results` 回传终态（含真实 time_used/memory_used）、失败时回传 compile-info/run-info 与 judge_error。
 - **范围**：新增 `judge/judge_daemon.py`；后端 `FAKE_JUDGE=false` 时禁用自动判定；更新 `judge/README.md` 启动方式。
 - **输出**：`FAKE_JUDGE=false` 下按演示文档步骤 2.6/2.7 复跑：A+B 正确解→accepted 且耗时/内存为真实值；错误解→wrong_answer；评测机日志可见真实编译运行记录。
+- **状态（第 6 天）**：🟡 **已实现，联调待确认**。`judge/judge_daemon.py` 落地（login→tasks→checkout→source/problem/testdata→g++ 编译→逐点运行→results/compile-info/run-info/heartbeat，含 judge_error 降级）；`FAKE_JUDGE` 默认改 false；自测：HTTP 全链路断言通过（T2/T4/T5）、编译运行快速核对 ALL PASS；完整复跑 `test_judge_daemon.py` 与演示文档 2.6/2.7 复跑留第 7 天联调（见 REVIEW_NOTES A-1~A-6）。
 
 ### G2 真实 WASM 编译未接入（演示模式兜底）
 
@@ -20,6 +21,7 @@
 - **需求**：懒加载预编译 clang.wasm，浏览器内编译用户 C++ 源码并执行，返回真实 stdout/stderr；编译失败展示真实错误文本；资源加载有进度/失败提示。
 - **范围**：`frontend/src/wasm/runtime.ts` 真实分支；clang.wasm 资源落地（docs 记录来源与构建脚本）；`.env.development` 开关置 0。
 - **输出**：前端点"运行"输入 A+B 代码输出 `3`（非样例回显）且无"演示模式"标签；输入含语法错误代码时展示真实编译错误；运行失败分支有提示。
+- **状态（第 6 天）**：🟡 **已实现，浏览器端待实测**。资源自托管 `frontend/public/clang/`（clang22/lld22/sysroot22.tar），运行时代码自托管 `frontend/src/wasm/vendor/`（Apache-2.0，零 npm 依赖）；`runtime.ts` 真实分支接入（懒加载 Worker + 错误翻译），`VITE_FAKE_WASM` 默认 0；Node 自测 `verify_clang_wasm.mjs` **6/6 PASS**（编译 A+B→链接→运行输出 3；语法错误诊断）。浏览器端实测（Vite dev + 题目页运行、exnref 降级、brotli）留第 7 天联调（见 REVIEW_NOTES B-1~B-7）。
 
 ## P1（第 6~7 天）
 
@@ -83,3 +85,9 @@
 | B | G2 真实 WASM 编译 | 前端 + 资源 | 无（与 G1 完全独立） |
 
 A/B 互不依赖可并行；G3/G4 为小改可穿插在等待间隙。每块按：**计划**（拆步骤+验收断言）→ **执行**（编码+实机验证）→ **核对**（对照差距清单输出项打勾）。
+
+### 第 6 天执行结果（2026-08-24 晚回填）
+
+- ✅ 块 A：G1 代码完成 + 工具链落地（w64devkit GCC 16.2 → judge/toolchain/）+ HTTP 链路自测通过；`FAKE_JUDGE` 默认 false。
+- ✅ 块 B：G2 代码完成 + 资源/运行时落地（clang22/lld22/sysroot22 → public/clang/，vendor 自托管）+ Node 自测 6/6 PASS；`VITE_FAKE_WASM` 默认 0。
+- ⏳ 待第 7 天：A/B 完整自测复跑留档、浏览器端实测（B-6）、G3/G4/G6 穿插项、brotli（B-7）。

@@ -3,7 +3,12 @@
 运行：cd backend && python -m scripts.smoke
 注意：必须用 `with TestClient(app)` 才会触发 startup（假评测器线程）。
 """
+import os
 import time
+
+# 冒烟测试契约依赖假评测（提交后 7s 内出终态）；config 默认值第 6 天起已切为 FAKE_JUDGE=false，
+# 这里显式保持本脚本的假评测冒烟语义，不受默认值影响。
+os.environ.setdefault("FAKE_JUDGE", "true")
 
 from fastapi.testclient import TestClient
 

@@ -61,3 +61,12 @@ Desktop.ini
 # ===== 构建与语言服务缓存 =====
 *.tsbuildinfo
 # TypeScript 增量构建缓存（tsc 每次编译自动生成），随时可重建，不入库
+
+# ===== 工具链与预编译资源（第 6 天起）=====
+judge/toolchain/
+# w64devkit 便携 GCC（第 6 天引入）：第三方二进制工具链，解压产物近万文件。
+# 不提交；重建方式见 judge/README.md 的下载脚本
+
+frontend/public/clang/
+# wasm-clang-runtime 预编译资源（clang22/lld22/sysroot22.tar）：浏览器内编译 C++ 用。
+# 不提交；重建方式见 judge/README.md 的"浏览器端 WASM 编译资源"一节

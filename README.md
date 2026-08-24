@@ -3,6 +3,8 @@
 XCPC/ACM 场景的在线测评系统 Web 端。选手在浏览器中做题、编写并提交 C++ 代码、查看评测状态；管理员发布题目与评测数据；评测机（程序）自动拉取任务并回传结果。
 
 > 配套文档见 `docs/`：建设方案、模块图与选型比对、数据模型（data-model.md）、接口约定（api.md）、项目备忘（PROJECT_MEMO.md）。
+>
+> **仓库约束（Harness，第 6 天起）**：改动前先读 [`AGENTS.md`](AGENTS.md)（能改/禁改/密钥与依赖禁令/完成标准）；提交前跑 `powershell -File scripts/check_harness.ps1` 确认 `HARNESS OK`。
 
 ## 目录结构（代码 / 文档 / 脚本 / 数据分区）
 
