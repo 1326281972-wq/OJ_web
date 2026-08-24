@@ -32,6 +32,36 @@
 
 ---
 
+## 2026-08-24（第 8 天）· 模块：交付演练 + 题库扩展
+
+### 计划摘要
+- **任务 1**：`seed.py` 题库扩展到 21 道（1001 A+B ~ 1021 矩阵转置），覆盖基础 IO/算术/字符串/数组/数论/进制/矩阵七类，每题严格 2 in + 2 out。
+- **任务 2**：重置 db 验证新题数据（sqlite 直查 problems=21 / test_cases=84 / users=3 / 示例提交 x2）。
+- **任务 3**：回归 `smoke_e2e.py` 三段（Phase 1 契约 17 → Phase 2 judge_daemon 8 → Phase 3 异常 6）；`verify_problems.py` 21 题全库实跑留第 9 天（用户选择跳过）。
+- **任务 4**：`README.md` 补全安装/配置/启动/**停止**（commit `0c72b54`）。
+- **任务 5**：`DEMO_GUIDE.md` v2（真实评测机 + 真实 WASM + 21 题）+ 浏览器实机走通 8 步（playwright，截图 `docs/images/day8-*.png`）。
+- **任务 6**：实验报告 08：验收自测表 + 两层测试（L1 自动化通检 / L2 浏览器实机）。
+- **任务 7**：`check_harness.ps1` HARNESS OK + git commit/push。
+
+### 自测命令与结果（当日实测）
+- [x] `backend\.venv\Scripts\python scripts\smoke_e2e.py` → **三段全 PASS**（Phase 1 24 预期码 / 0 意外 500；Phase 2 8/8；Phase 3 6/6）
+- [x] 重置 db：`Remove-Item backend\data\app.db` → `python -m scripts.seed` → sqlite 直查 21 题 / 84 测试点 / 3 用户
+- [x] 浏览器实机（playwright）：重定向登录 → 登录 → 题库 21 题 → 1001 详情 → WASM 运行输出 `3` → 提交 #6 → 终态 AC（8ms，见 `day8-ac.png`）
+- [~] `verify_problems.py` 21 题全库评测：**跳过**（控制时长；L1 Phase 2 已覆盖真评测，留第 9 天）
+- [x] HARNESS OK + 提交 `docs: day8 delivery verification report + screenshots`
+
+### 审查问题
+- 启动前端用 `Start-Process npm` 失败（Windows npm 是 .cmd）→ 改 `cmd /c "npm run dev > log 2>&1"` 成功（见实验报告08 §8）。
+- 后台服务占用日志文件无法删除 → 先按端口/命令行定位 PID 停进程再删。
+
+### 遗留事项
+1. `verify_problems.py` 21 题全库评测实跑（第 9 天结课硬证据）。
+2. G3~G8 小项（轮询退避/v-loading/细粒度权限/前端节流/前端测试/favicon）仍未做。
+3. `check_harness.ps1` 第 6 项并入 smoke_e2e 硬性门禁。
+4. 第二人按 DEMO_GUIDE v2 从零复现回填。
+
+---
+
 ## 2026-08-25（第 7 天）· 模块：联调贯通 + harness 收紧
 
 ### 计划摘要

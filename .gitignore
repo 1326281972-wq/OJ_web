@@ -70,3 +70,8 @@ judge/toolchain/
 frontend/public/clang/
 # wasm-clang-runtime 预编译资源（clang22/lld22/sysroot22.tar + 自举 memfs）：浏览器内编译 C++ 用。
 # 不提交；重建方式见 judge/README.md 的"浏览器端 WASM 编译资源"一节
+
+# ===== 本地启动与构建留档（第 8 天起）=====
+.tmp-memfs-build/
+logs-*.txt
+# 本地开发时后台启动服务产生的日志与 memfs 自举构建的 repro 留档，均不提交
