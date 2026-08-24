@@ -59,4 +59,6 @@
 | 块 A 自测（约 40s） | `cd judge && python scripts/test_judge_daemon.py` |
 | 块 B 自测（Node，~10s） | `cd frontend && node scripts/verify_clang_wasm.mjs` |
 | 后端冒烟 | `cd backend && python -m scripts.smoke`（内部强制 FAKE_JUDGE=true） |
+| 异常路径子测（6 条） | `cd backend && python -m scripts.test_anomaly_paths` |
+| **快速通检**（第 7 天起） | `backend/.venv/Scripts/python scripts/smoke_e2e.py`（串 smoke + judge_daemon + anomaly 三段，入口 reset_db + 5.2s 限流缓冲；`.py` 不能用 `powershell -File` 跑） |
 | 前端启动 | `cd frontend && npm run dev`（VITE_FAKE_WASM=0） |

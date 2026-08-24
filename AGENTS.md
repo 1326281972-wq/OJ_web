@@ -39,3 +39,4 @@
    - 前端类型：`cd frontend && npx vue-tsc --noEmit`（改前端必跑）
 3. 文档同步：接口变→`api.md`；架构/备忘→`PROJECT_MEMO.md`；问题→`REVIEW_NOTES.md` + `DEV_LOG.md`；每日→`实验报告XX.md`；
 4. **提交前**：`cd 仓库根 && powershell -File scripts/check_harness.ps1` 输出 `HARNESS OK`，且 `git status` 无工具链/依赖树噪音，才可 `git add`。
+5. **联调日（第 7 天起）必跑通检**：`cd 仓库根 && backend/.venv/Scripts/python scripts/smoke_e2e.py` 三段全 PASS（契约 17 + 端到端 8 + 异常 6），否则**禁止 push**；详见 `docs/TROUBLESHOOTING.md` §3。

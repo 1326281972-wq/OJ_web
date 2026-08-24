@@ -31,3 +31,35 @@
 5. 演示文档 `DEMO_GUIDE.md` 2.6/2.7 步骤需在联调后更新为真实评测机/WASM 的操作路径。
 
 ---
+
+## 2026-08-25（第 7 天）· 模块：联调贯通 + harness 收紧
+
+### 计划摘要
+- **目标**：把 A/B 两块按工作流贯通成一条可走通的路径；致命问题当日清掉；写齐 ≥5 条排错记录（含 1 条通检）。
+- **任务 1**：通检脚本 `scripts/smoke_e2e.py` 串起 smoke（17）+ judge_daemon（8）+ 异常路径（6）三段；入口 `reset_db + sleep(5.2)` 规避 5s 限流。
+- **任务 2**：致命漏洞——发现 `seed.py` 写 TestCase 只写 1.in/2.in（输入），**没写 1.out/2.out**（期望输出），daemon 拉 `.out` 永远 404 → 全部 system_error；test_judge_daemon 5/8 → 修复 → 8/8。
+- **任务 3**：README 三处过期（启动第 3 步"第 4 天起"、环境变量表默认值、假实现边界表"替换日期"）当日清掉，对齐第 6 天真实现。
+- **任务 4**：异常路径子测 6 条（题目不存在 / 非法 status / 路径穿越 / 角色不匹配 / 重复 checkout 原子性 / 评测机回传 system_error）覆盖 README 图片模板四类断点。
+- **任务 5**：`docs/TROUBLESHOOTING.md` 按"现象/期望/日志/相关文件/已尝试/仍失败/修复/故障层次"模板写 7 条（>5）。
+- **任务 6**：harness 收紧——把"通检通过"列为提交前必跑项（写进 AGENTS.md §4 + 报告07 §7 明日计划）。
+
+### 自测命令与结果（当日实测全绿，已回填）
+- [x] `cd OJ_web && backend/.venv/Scripts/python scripts/smoke_e2e.py` → **三段全 PASS**：
+  - Phase 1：smoke 17 case，24 预期码命中 / **0 意外 500**
+  - Phase 2：test_judge_daemon **8/8**（seed 补 1.out/2.out + judge_problem 只列 .in 后）
+  - Phase 3：test_anomaly_paths **6/6**（A1~A6 全 PASS）
+  - 末尾 `[OK] smoke_e2e 全部通过 - 可提交 / 推送`
+- [x] 期间新增两处脚本自修（见 TROUBLESHOOTING §9/§10）：Phase 3 改用 `-m scripts.test_anomaly_paths`（否则 `from app.main` 找不到）；脚本顶部加 `sys.stdout.reconfigure(utf-8)`（否则 Windows GBK 控制台打印崩溃）。
+- [x] 附加发现 §8：`judge_problem` 曾把 `.out` 也列为测试点 → daemon 把期望输出当输入喂给程序（静默错判）→ 已过滤只列 `.in`。
+- [ ] 整体：HARNESS OK（check_harness.ps1）+ smoke_e2e OK 后 git commit/push（T7 执行）
+
+### 审查问题（见 `docs/REVIEW_NOTES.md` 与 `docs/TROUBLESHOOTING.md`）
+- §1 seed 缺 1.out/2.out（致命，已修）— 见 TROUBLESHOOTING §1
+- §7 README 假实现边界表过期（致命，他人无法启动，已修）— 见 TROUBLESHOOTING §7
+- 端口被占 / venv 误用 / 5s 限流残留 三项已记录到 TROUBLESHOOTING §4/§5/§6
+
+### 遗留事项
+1. smoke_e2e 进 `check_harness.ps1`（明日：AGENTS.md §4 完成标准加"smoke_e2e.py 三段全绿"）
+2. OJ_BASE_URL 与后端端口一致性检查进 smoke_e2e（今日已留口）
+3. 穿插小项 G3 轮询退避 / G4 v-loading / G6 前端节流 仍未做（顺延）
+4. 块 B 浏览器端 playwright 联调（昨日遗留 #1）

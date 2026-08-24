@@ -140,6 +140,10 @@ def judge_problem(
         .order_by(TestCase.order_no)
         .all()
     )
+    # 测试点清单只列 .in：daemon 用 name.replace(".in", ".out") 推导期望输出。
+    # 若把 .out 也列为"测试点"，daemon 会把期望输出文件当输入喂给程序
+    # （第 7 天联调发现：1.out 被当作测试点导致 A+B 读入只剩一个数字，结果不定）。
+    test_cases = [{"name": c.name} for c in cases if c.name.endswith(".in")]
     return {
         "code": 0,
         "message": "ok",
@@ -149,7 +153,7 @@ def judge_problem(
             "time_limit": p.time_limit,
             "memory_limit": p.memory_limit,
             "spj": p.spj,
-            "test_cases": [{"name": c.name} for c in cases],
+            "test_cases": test_cases,
         },
     }
 

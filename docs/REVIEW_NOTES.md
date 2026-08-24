@@ -36,4 +36,19 @@
 ## 跨块观察（供联调人重点核查）
 
 1. `judge/README.md` 与 `frontend/src/wasm/vendor/README.md` 记录了各自已知限制，建议联调日按表逐条复核。
-2. 完整自测 `test_judge_daemon.py`（约 40s）在本机执行时 HTTP 链路断言已通过（T2/T4/T5），T1/T3 曾因 A-2 失败，修复后经 `_verify_a_fast.py` 快速核对全通（该临时脚本已删除）；联调日请以最终版完整复跑并留档。
+2. 完整自测 `test_judge_daemon.py`（约 40s）——**第 7 天已通过 `scripts/smoke_e2e.py` 完整复跑并留档：8/8 PASS**（含 T1 正确解 / T2 编译错 / T3 错答 / T4 运行错 / T5 降级，见 DEV_LOG 第 7 天）。
+
+---
+
+## 第 7 天联调新增问题（按 README 图片"现象/期望/日志/相关文件/已尝试/仍失败/修复"模板记录，全部已修；详见 `docs/TROUBLESHOOTING.md`）
+
+| # | 位置 | 现象 | 修复 |
+|---|------|------|------|
+| C-1 | `backend/scripts/seed.py` 第 53-55 行 | TestCase 只写 1.in/2.in，daemon 拉 1.out → tc=None → 404 → 5/8 FAIL（system_error） | 改为 4 行：1.in + 1.out + 2.in + 2.out（同步加注释） | ✅ |
+| C-2 | `README.md` §启动 §3 / §环境变量 / §假实现边界 | 写"第 4 天起 FAKE_JUDGE=false"，但实际第 6 天已完成；新成员按 README 跑会"提交一直 pending" | 三处对齐现状：默认 false/0，假实现表加"第 6 天已替换" | ✅ |
+| C-3 | `scripts/` 缺三段串联通检入口 | smoke / judge_daemon / 异常路径分散，联调日拉新人易漏跑 | 新建 `scripts/smoke_e2e.py`（Windows）+ `.sh`（Linux）整合入口 | ✅ |
+| C-4 | `backend/scripts/` 缺异常路径子测 | 缺"两端字段不一致、时序、环境、脏数据"四类断点的快速断言 | 新建 `test_anomaly_paths.py` 覆盖 6 条（题目不存在 / 非法 status / 路径穿越 / 角色不匹配 / 重复 checkout / 评测机回传 system_error） | ✅ |
+| C-5 | `backend/app/api/v1/judge.py` `judge_problem` | `test_cases` 未过滤，把 `.out` 文件也列为测试点 → daemon 用 `name.replace(".in",".out")` 拉期望输出时，遇 `1.out` 会把期望输出当**输入**喂给程序（静默错判，不报错） | 只返回 `.in` 结尾的 case（加注释）；当日通检 Phase 2 8/8 验证 | ✅ |
+| C-6 | `backend/.env.example` | 模板仍写 `FAKE_JUDGE=true`，与 config.py 默认 `false`、README 声明矛盾——新成员复制模板后跑成假评测器模式，真评测链永不触发 | 模板改 `FAKE_JUDGE=false` + 注释"旧 .env 需删除重复制"（本机 `.env` 属本地产物未直改） | ✅ |
+| C-7 | `scripts/smoke_e2e.py` Phase 3 | 用 `python scripts/test_anomaly_paths.py` 直跑 → sys.path[0] 是 scripts/，`from app.main import app` 崩 ModuleNotFoundError | 改 `python -m scripts.test_anomaly_paths`（与 smoke 一致） | ✅ |
+| C-8 | `scripts/smoke_e2e.py` 顶层 | Windows GBK 控制台打印含 `\u0368` 的日志 → UnicodeEncodeError | `sys.stdout.reconfigure(encoding="utf-8", errors="replace")` | ✅ |

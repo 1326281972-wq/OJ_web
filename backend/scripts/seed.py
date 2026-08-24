@@ -48,10 +48,15 @@ def main() -> None:
         )
         db.add(p)
         db.flush()
+        # 一个测试点需同时存输入与期望输出（daemon 拉 .in 喂数据、.out 比对），
+        # 否则 judge.testdata/1.out → tc is None → 404 → daemon 全部 system_error。
+        # （第 7 天联调发现：早期种子只写 .in；评测机自测 3/8 FAIL → 已修补）
         db.add_all(
             [
-                TestCase(problem_id=p.id, name="1.in", input_file="1 2", output_file="3", order_no=1),
-                TestCase(problem_id=p.id, name="2.in", input_file="10 20", output_file="30", order_no=2),
+                TestCase(problem_id=p.id, name="1.in", input_file="1 2", order_no=1),
+                TestCase(problem_id=p.id, name="1.out", output_file="3", order_no=1),
+                TestCase(problem_id=p.id, name="2.in", input_file="10 20", order_no=2),
+                TestCase(problem_id=p.id, name="2.out", output_file="30", order_no=2),
             ]
         )
 

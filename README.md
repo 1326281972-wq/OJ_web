@@ -66,8 +66,9 @@ npm run dev
 
 ### 3. 评测机
 
-- **当前阶段（第 3~4 天）**：后端内置假评测器（`FAKE_JUDGE=true` 默认开启），无需另起进程即可看到 提交→自动评测→终态 流转；
-- **第 4 天起**：按 `judge/README.md` 启动真实演示评测机，并设置环境变量 `FAKE_JUDGE=false`。
+- **第 6 天起**：默认关闭后端假评测器（`FAKE_JUDGE=false`，见 `backend/app/core/config.py`），按 `judge/README.md` 启动真实评测机 `judge/judge_daemon.py`（本机 GCC 16.2 在 `judge/toolchain/w64devkit/bin/g++.exe`，可用 `CXX` 环境变量覆盖）；
+- 纯后端演示 / 联调：临时设 `FAKE_JUDGE=true`（见 `.env.example`），此时无需 daemon 也能看到自动流转；
+- **联调时若提交一直 pending**：说明评测机没起或 `OJ_BASE_URL` 指向了别的实例——按排错 `docs/TROUBLESHOOTING.md` §3。
 
 ### 停止
 
@@ -81,14 +82,16 @@ npm run dev
 | `SECRET_KEY` | dev-only-change-me | JWT 签名密钥，**生产必须改为随机值** |
 | `DATABASE_URL` | sqlite:///backend/data/app.db | 数据库地址 |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | 1440 | token 有效期（分钟） |
-| `FAKE_JUDGE` | true | 是否启用后端假评测器（第 4 天起置 false） |
+| `FAKE_JUDGE` | false | 第 6 天起默认 false：开启则后端内置假评测器自动判，关闭须另起 `judge_daemon.py` 真实评测 |
 | `VITE_API_BASE` | /api | 前端接口基址（vite proxy 转发到 8000） |
 
 **敏感信息**：`.env` 含本地密钥，不入库（见 .gitignore）；仓库只保留不含秘密的 `.env.example`。新机器：复制 `.env.example` 为 `.env` 并按需修改 `SECRET_KEY` 即可。
 
 ## 假实现边界（勿误当成已完成）
 
-| 假实现 | 开关 | 替换日期 |
-|--------|------|----------|
-| 后端假评测器（自动判 AC/WA） | `FAKE_JUDGE=true` | **第 4 天** → 真实 judge/judge_daemon.py |
-| 前端假 WASM 运行（固定输出/固定编译错误） | `VITE_FAKE_WASM=1` | **第 5 天** → 真实 clang.wasm |
+> 第 6 天起，所有"假实现"已被真实实现替换，**默认状态即真**：后端 `FAKE_JUDGE=false` 走 `judge_daemon.py` 真实评测；前端 `VITE_FAKE_WASM=0` 走自托管 `clang.wasm` 真实编译。下方表格保留为历史参考。
+
+| 假实现 | 开关 | 现状 |
+|--------|------|------|
+| 后端假评测器 | `FAKE_JUDGE=true` | **第 6 天**已被 `judge_daemon.py` 替换；默认 `false` |
+| 前端假 WASM 编译 | `VITE_FAKE_WASM=1` | **第 6 天**已被自托管 `clang22/lld22/sysroot22.tar` 替换；默认 `0` |
