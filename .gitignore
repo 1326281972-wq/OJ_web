@@ -68,5 +68,5 @@ judge/toolchain/
 # 不提交；重建方式见 judge/README.md 的下载脚本
 
 frontend/public/clang/
-# wasm-clang-runtime 预编译资源（clang22/lld22/sysroot22.tar）：浏览器内编译 C++ 用。
+# wasm-clang-runtime 预编译资源（clang22/lld22/sysroot22.tar + 自举 memfs）：浏览器内编译 C++ 用。
 # 不提交；重建方式见 judge/README.md 的"浏览器端 WASM 编译资源"一节

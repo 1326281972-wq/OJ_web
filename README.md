@@ -24,7 +24,8 @@ OJ_web/
 ├─ frontend/                 # 代码分区：Vue3 前端
 │  ├─ src/                   #   源码
 │  ├─ index.html  vite.config.ts  package.json
-│  └─ .env.example           # VITE_API_BASE 示例
+│  ├─ .env.example           # VITE_API_BASE 示例
+│  └─ public/clang/          #   浏览器 WASM 编译资源（clang22/lld22/sysroot22.tar/memfs，git 忽略）
 ├─ judge/                    # 代码分区：评测机（第 4 天实现，见 judge/README.md）
 └─ scripts/                  # 脚本分区：启动脚本
    ├─ start_backend.ps1 / start_backend.sh
@@ -34,19 +35,20 @@ OJ_web/
 ## 环境要求
 
 - Python 3.11+（后端）
-- Node.js 18+（前端）
+- Node.js 18+（前端；`frontend/scripts/verify_clang_wasm.mjs` 等 WASI 自测建议 Node 20+，Node 24 已验证）
 - g++（真实评测机编译选手代码必需；默认工具链在 `judge/toolchain/w64devkit/bin/g++.exe`，可用 `CXX` 覆盖）
 
 ## 安装（新机器首次，一次性）
 
 1. **后端依赖**：`cd backend && python -m venv .venv` → 激活虚拟环境（Windows: `.\.venv\Scripts\Activate.ps1`；Linux/macOS: `source .venv/bin/activate`）→ `pip install -r requirements.txt`。
 2. **前端依赖**：`cd frontend && npm install`。
-3. **评测机工具链**：确认 g++ 可用（`judge/toolchain/w64devkit/bin/g++.exe` 存在，或 `CXX` 指向任意可用 g++）。
+3. **评测机工具链**：确认 g++ 可用（`judge/toolchain/w64devkit/bin/g++.exe` 存在，或 `CXX` 指向任意可用 g++）。本机无系统 g++ 时按 `judge/README.md` 下载便携 w64devkit（GCC 16.2，约 59MB）。
+4. **浏览器 WASM 编译资源（`frontend/public/clang/`，4 件）**：`clang22`（34.4MB）+ `lld22`（18.3MB）+ `sysroot22.tar`（38MB）从 `cppstudio-io/wasm-clang-runtime` v0.1.0 release 下载；**`memfs`（97KB）为自举编译产物，无线上下载源**——详见 `frontend/src/wasm/vendor/README.md`（来源、重建方法与 `verify_clang_wasm.mjs` 自测）。下载方式见 `judge/README.md`「浏览器端 WASM 编译资源」节。
 
 ## 配置
 
 1. **后端环境变量**：`cd backend && copy .env.example .env`（Windows）/ `cp .env.example .env`（Linux/macOS）；不配置也可直接运行（用默认值）。生产环境务必修改 `SECRET_KEY`。
-2. **前端环境变量**：`cd frontend && copy .env.example .env`，默认 `VITE_API_BASE=/api`（vite proxy 转发到 8000），一般无需改。
+2. **前端环境变量**：`cd frontend && copy .env.example .env`，默认 `VITE_API_BASE=/api`（vite proxy 转发到 8000），一般无需改。**浏览器 WASM 编译开关** `VITE_FAKE_WASM` 在 `.env.development` 中默认 `0`（真实编译）；置 `1` 可回退演示模式（见下表与「假实现边界」节）。
 3. **建库与题库**：`cd backend && python -m scripts.seed`，生成 `backend/data/app.db`，内置账号 `admin/admin123`、`demo_user/demo123`、`judger1/judger123`，题目 **1001~1021 共 21 道**（1001 演示题 + 1002~1021 简单/中等题，每题 2 组测试点）。如需重置：删除 `backend/data/app.db` 后重跑 seed。
 
 ## 启动
@@ -58,7 +60,7 @@ cd OJ_web
 powershell -ExecutionPolicy Bypass -File scripts/start_all.ps1
 ```
 
-该脚本新开窗口启动后端（保留日志）、当前窗口启动前端。**评测机需单独启动**：另开终端按 `judge/README.md` 运行 `judge/judge_daemon.py`（或临时设 `FAKE_JUDGE=true` 用假评测器）。Linux/macOS 对应 `scripts/start_all.sh`。
+该脚本新开窗口启动后端（保留日志）、当前窗口启动前端。**评测机需单独启动**：另开终端运行 `judge/judge_daemon.py`（`judge/` 目录无独立 venv，用后端虚拟环境解释器：Windows `backend\.venv\Scripts\python.exe judge\judge_daemon.py`；或临时设 `FAKE_JUDGE=true` 用假评测器）。Linux/macOS 对应 `scripts/start_all.sh`（daemon：`backend/.venv/bin/python judge/judge_daemon.py`）。
 
 ### 方式 B：分步启动
 
@@ -68,14 +70,15 @@ powershell -ExecutionPolicy Bypass -File scripts/start_all.ps1
 **2. 前端（端口 5173）**：`cd frontend && npm run dev`
 - 验证：浏览器打开 `http://127.0.0.1:5173`，页面显示 OJ Web 基线页并显示后端健康状态。
 
-**3. 评测机（真实评测必需）**：默认 `FAKE_JUDGE=false`，须另起 `judge_daemon.py`（见 `judge/README.md`）；纯后端演示可临时设 `FAKE_JUDGE=true` 用假评测器（此时无需 daemon）。
+**3. 评测机（真实评测必需）**：默认 `FAKE_JUDGE=false`，须另起 `judge_daemon.py`（见 `judge/README.md`，本机用 `backend\.venv\Scripts\python.exe judge\judge_daemon.py` 启动）；纯后端演示可临时设 `FAKE_JUDGE=true` 用假评测器（此时无需 daemon）。
 - 联调时若提交一直 `pending`：评测机没起或 `OJ_BASE_URL` 指向别的实例——按排错 `docs/TROUBLESHOOTING.md` §3。
 
 ## 停止
 
 - 后端/前端/评测机：各自在对应终端按 `Ctrl+C`；
 - 端口被占用：`netstat -ano | findstr :8000`（或 `:5173`）找到 PID → `taskkill /PID <pid> /F`；
-- 一键脚本方式：关闭启动窗口即全部停止（或按脚本输出提示逐个停止）。
+- 一键脚本方式：关闭启动窗口即全部停止（或按脚本输出提示逐个停止）；
+- **一键停止（Windows，按端口杀）**：`Get-NetTCPConnection -LocalPort 8000,5173 -State Listen | % { Stop-Process -Id $_.OwningProcess -Force }`；评测机进程可按名字 `Stop-Process -Name python -Force`（注意会连同后端一起停，确认无其他 python 任务时使用）。
 
 ## 环境变量
 
@@ -86,6 +89,8 @@ powershell -ExecutionPolicy Bypass -File scripts/start_all.ps1
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | 1440 | token 有效期（分钟） |
 | `FAKE_JUDGE` | false | 第 6 天起默认 false：开启则后端内置假评测器自动判，关闭须另起 `judge_daemon.py` 真实评测 |
 | `VITE_API_BASE` | /api | 前端接口基址（vite proxy 转发到 8000） |
+| `VITE_FAKE_WASM` | 0 | 前端 WASM 编译开关（`frontend/.env.development`）：0=真实浏览器内编译（默认），1=演示模式回显样例输入 |
+| `CXX` / `OJ_BASE_URL` / `OJ_USER` / `OJ_PASSWORD` | — | 评测机侧变量（默认值见 `judge/README.md` 表），主服务不读取 |
 
 **敏感信息**：`.env` 含本地密钥，不入库（见 .gitignore）；仓库只保留不含秘密的 `.env.example`。新机器：复制 `.env.example` 为 `.env` 并按需修改 `SECRET_KEY` 即可。
 
@@ -96,7 +101,7 @@ powershell -ExecutionPolicy Bypass -File scripts/start_all.ps1
 | 假实现 | 开关 | 现状 |
 |--------|------|------|
 | 后端假评测器 | `FAKE_JUDGE=true` | **第 6 天**已被 `judge_daemon.py` 替换；默认 `false` |
-| 前端假 WASM 编译 | `VITE_FAKE_WASM=1` | **第 6 天**已被自托管 `clang22/lld22/sysroot22.tar` 替换；默认 `0` |
+| 前端假 WASM 编译 | `VITE_FAKE_WASM=1` | **第 6 天**已被自托管 `clang22/lld22/sysroot22.tar/memfs` 替换；默认 `0` |
 
 ## 快速通检与回归（第 7/8 天起）
 

@@ -28,7 +28,7 @@ w64devkit.7z.exe -y        # 自解压出 w64devkit/ 目录
 
 ### 浏览器端 WASM 编译资源（块 B，同样已被 .gitignore 忽略）
 
-`frontend/public/clang/` 是 wasm-clang-runtime v0.1.0 三件套（浏览器内编译 C++ 用），新环境需手动重建：
+`frontend/public/clang/` 是浏览器内编译 C++ 所需的 **4 件资源**（wasm-clang-runtime v0.1.0 三件套 + 自举编译的 memfs），新环境需手动重建：
 
 ```
 cd frontend/public/clang
@@ -40,7 +40,10 @@ tar -xf sysroot22.tar -C sysroot
 ```
 
 同样可用 `https://ghfast.top/` 镜像前缀（文件较大，共约 90MB）。
-验证：`cd frontend && node scripts/verify_clang_wasm.mjs`（Node WASI 真实编译链自测，6 项全 PASS）。
+
+**`memfs`（第 4 件，97KB）无 release 下载源**——它是基于 binji/wasm-clang 的 `memfs.c`（移植到 wasi-sdk 33 `<wasi/api.h>`、`MAX_NODES` 提到 8192）编译的 WASM 模块，浏览器端 `shared.js` 用它实现 VFS（untar sysroot / 读写源文件 / 交换编译产物）。**缺失时浏览器点"运行"会 fetch `/clang/memfs` 404**。源文件与自举构建脚本在 `frontend/src/wasm/vendor/README.md`「资源文件」节记录（当前保留于未入库的 `.tmp-memfs-build/`，见 `build.sh`）。
+
+验证：`cd frontend && node scripts/verify_clang_wasm.mjs`（Node WASI 真实编译链自测，6 项全 PASS）。**注意该脚本覆盖 clang22/lld22/sysroot 三项，不加载 memfs**（Node 侧用真实文件系统 preopens）；memfs 是否就绪只能由浏览器端"运行"实测（或按 vendor/README 的 memfs 独立自测步骤）。
 
 ## 启动评测机
 
@@ -51,11 +54,12 @@ cd backend
 python -m uvicorn app.main:app --port 8000
 ```
 
-再启动评测机（另一终端）：
+再启动评测机（另一终端）。`judge/` 目录无独立虚拟环境，建议用后端 venv 的解释器（Python 3.11+ 即可，daemon 仅依赖标准库）：
 
 ```
-cd judge
-python judge_daemon.py
+cd OJ_web
+backend\.venv\Scripts\python.exe judge\judge_daemon.py   # Windows
+backend/.venv/bin/python judge/judge_daemon.py           # Linux/macOS
 ```
 
 环境变量（均有默认值）：
