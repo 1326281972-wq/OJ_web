@@ -35,45 +35,47 @@ OJ_web/
 
 - Python 3.11+（后端）
 - Node.js 18+（前端）
-- g++（可选，仅真实评测机编译选手代码用；纯前端 WASM 演示不需要）
+- g++（真实评测机编译选手代码必需；默认工具链在 `judge/toolchain/w64devkit/bin/g++.exe`，可用 `CXX` 覆盖）
 
-## 启动说明（换机器/隔段时间均可按此跑通）
+## 安装（新机器首次，一次性）
 
-### 1. 后端（端口 8000）
+1. **后端依赖**：`cd backend && python -m venv .venv` → 激活虚拟环境（Windows: `.\.venv\Scripts\Activate.ps1`；Linux/macOS: `source .venv/bin/activate`）→ `pip install -r requirements.txt`。
+2. **前端依赖**：`cd frontend && npm install`。
+3. **评测机工具链**：确认 g++ 可用（`judge/toolchain/w64devkit/bin/g++.exe` 存在，或 `CXX` 指向任意可用 g++）。
 
-```bash
-cd backend
-python -m venv .venv                 # 创建虚拟环境
-# Windows PowerShell:  .\.venv\Scripts\Activate.ps1
-# Linux/macOS:         source .venv/bin/activate
-pip install -r requirements.txt      # 依赖清单安装
-copy .env.example .env               # Windows；Linux: cp .env.example .env（可选，默认值可直接运行）
-python -m scripts.seed               # 建库 + 演示数据（admin/admin123、demo_user、1001 A+B）
-uvicorn app.main:app --reload --port 8000
-```
+## 配置
 
-验证：浏览器打开 `http://127.0.0.1:8000/docs`（Swagger），或 `curl http://127.0.0.1:8000/api/v1/health` 返回 `{"code":0,...}`。
+1. **后端环境变量**：`cd backend && copy .env.example .env`（Windows）/ `cp .env.example .env`（Linux/macOS）；不配置也可直接运行（用默认值）。生产环境务必修改 `SECRET_KEY`。
+2. **前端环境变量**：`cd frontend && copy .env.example .env`，默认 `VITE_API_BASE=/api`（vite proxy 转发到 8000），一般无需改。
+3. **建库与题库**：`cd backend && python -m scripts.seed`，生成 `backend/data/app.db`，内置账号 `admin/admin123`、`demo_user/demo123`、`judger1/judger123`，题目 **1001~1021 共 21 道**（1001 演示题 + 1002~1021 简单/中等题，每题 2 组测试点）。如需重置：删除 `backend/data/app.db` 后重跑 seed。
 
-### 2. 前端（端口 5173）
+## 启动
+
+### 方式 A：一键启动（推荐，Windows）
 
 ```bash
-cd frontend
-npm install                          # 依赖清单安装（package.json + lock 文件）
-npm run dev
+cd OJ_web
+powershell -ExecutionPolicy Bypass -File scripts/start_all.ps1
 ```
 
-验证：浏览器打开 `http://127.0.0.1:5173`，页面显示 OJ Web 基线页并显示后端健康状态。
+该脚本新开窗口启动后端（保留日志）、当前窗口启动前端。**评测机需单独启动**：另开终端按 `judge/README.md` 运行 `judge/judge_daemon.py`（或临时设 `FAKE_JUDGE=true` 用假评测器）。Linux/macOS 对应 `scripts/start_all.sh`。
 
-### 3. 评测机
+### 方式 B：分步启动
 
-- **第 6 天起**：默认关闭后端假评测器（`FAKE_JUDGE=false`，见 `backend/app/core/config.py`），按 `judge/README.md` 启动真实评测机 `judge/judge_daemon.py`（本机 GCC 16.2 在 `judge/toolchain/w64devkit/bin/g++.exe`，可用 `CXX` 环境变量覆盖）；
-- 纯后端演示 / 联调：临时设 `FAKE_JUDGE=true`（见 `.env.example`），此时无需 daemon 也能看到自动流转；
-- **联调时若提交一直 pending**：说明评测机没起或 `OJ_BASE_URL` 指向了别的实例——按排错 `docs/TROUBLESHOOTING.md` §3。
+**1. 后端（端口 8000）**：`cd backend && python -m uvicorn app.main:app --reload --port 8000`
+- 验证：`curl http://127.0.0.1:8000/api/v1/health` 返回 `{"code":0,...}`，或浏览器打开 `http://127.0.0.1:8000/docs`。
 
-### 停止
+**2. 前端（端口 5173）**：`cd frontend && npm run dev`
+- 验证：浏览器打开 `http://127.0.0.1:5173`，页面显示 OJ Web 基线页并显示后端健康状态。
 
-- 后端/前端：在对应终端按 `Ctrl+C`；
-- 端口被占用时先结束占用进程（`netstat -ano | findstr :8000`）。
+**3. 评测机（真实评测必需）**：默认 `FAKE_JUDGE=false`，须另起 `judge_daemon.py`（见 `judge/README.md`）；纯后端演示可临时设 `FAKE_JUDGE=true` 用假评测器（此时无需 daemon）。
+- 联调时若提交一直 `pending`：评测机没起或 `OJ_BASE_URL` 指向别的实例——按排错 `docs/TROUBLESHOOTING.md` §3。
+
+## 停止
+
+- 后端/前端/评测机：各自在对应终端按 `Ctrl+C`；
+- 端口被占用：`netstat -ano | findstr :8000`（或 `:5173`）找到 PID → `taskkill /PID <pid> /F`；
+- 一键脚本方式：关闭启动窗口即全部停止（或按脚本输出提示逐个停止）。
 
 ## 环境变量
 
@@ -95,3 +97,10 @@ npm run dev
 |--------|------|------|
 | 后端假评测器 | `FAKE_JUDGE=true` | **第 6 天**已被 `judge_daemon.py` 替换；默认 `false` |
 | 前端假 WASM 编译 | `VITE_FAKE_WASM=1` | **第 6 天**已被自托管 `clang22/lld22/sysroot22.tar` 替换；默认 `0` |
+
+## 快速通检与回归（第 7/8 天起）
+
+- **快速通检（一条命令，三段 31 项）**：`cd OJ_web && backend\.venv\Scripts\python scripts\smoke_e2e.py`
+  - Phase 1 契约 17 项（`backend/scripts/smoke.py`）→ Phase 2 真实评测端到端 8 项（`judge/scripts/test_judge_daemon.py`）→ Phase 3 异常路径 6 项（`backend/scripts/test_anomaly_paths.py`）。
+- **回归（全库标准解真评测）**：`cd backend && .venv\Scripts\python -m scripts.verify_problems` —— 对 1001~1021 全库 21 道题提交标准解并真实编译运行，断言全部 `accepted`（题目数据 + 评测链路双重回归，第 8 天起）。
+- 提交前跑 `powershell -File scripts/check_harness.ps1` 确认 `HARNESS OK`。

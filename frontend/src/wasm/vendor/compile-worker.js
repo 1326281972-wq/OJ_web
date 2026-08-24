@@ -96,6 +96,14 @@ async function readBuffer(name) {
       const url = new URL(`/clang/${name}${useGz ? '.gz' : ''}`, SELF_URL);
       const response = await fetch(url);
       if (!response.ok) throw new Error(`fetch ${name}: HTTP ${response.status}`);
+      // dev/托管服务器对不存在的静态文件常做 SPA fallback（200 + text/html），
+      // 会把 index.html 当资源返回：若直接按 wasm 解析会报晦涩的
+      // "expected magic word" 而非真实原因，故 content-type 为 html 视为加载失败。
+      // （第 8 天联调定位：noeh 兼容资源未自托管时即由此把 HTML 当 clang22 解析）
+      const ct = (response.headers.get('content-type') || '').toLowerCase();
+      if (ct.includes('text/html')) {
+        throw new Error(`fetch ${name}: 服务器返回 HTML（资源缺失或被 fallback），content-type=${ct}`);
+      }
       if (!response.body?.getReader) return await response.arrayBuffer();
       return await readStream(response, useGz);
     } catch (exn) {

@@ -84,10 +84,20 @@ export function createCompileClient({ hostWrite = () => {} } = {}) {
   let workerScriptPromise = null;
   function resolveWorkerScript() {
     if (!workerScriptPromise) {
+      // dev 模式下 vite 对不存在的文件做 SPA fallback，会返回 200 + text/html
+      // （index.html），只看 r.ok 会把 HTML 当 classic 脚本加载 → Worker 解析失败、
+      // 无任何回应 → run 被看门狗误判为死循环。因此还需校验 content-type 是
+      // JS 才算命中（构建产物里 classic 包是 application/javascript）。
       workerScriptPromise = fetch(WORKER_CLASSIC_URL, { method: 'HEAD' })
-        .then((r) => (r.ok
-          ? { url: WORKER_CLASSIC_URL, options: undefined }
-          : { url: WORKER_MODULE_URL, options: { type: 'module' } }))
+        .then((r) => {
+          const type = (r.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+          const isJs = r.ok && (type === 'application/javascript'
+            || type === 'text/javascript'
+            || type === 'application/x-javascript');
+          return isJs
+            ? { url: WORKER_CLASSIC_URL, options: undefined }
+            : { url: WORKER_MODULE_URL, options: { type: 'module' } };
+        })
         .catch(() => ({ url: WORKER_MODULE_URL, options: { type: 'module' } }));
     }
     return workerScriptPromise;
